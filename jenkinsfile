@@ -1,0 +1,29 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Clonar repositorio') {
+            steps {
+                git branch: 'main', url: 'https://github.com/SerGioAMM/test_php.git'
+            }
+        }
+
+        stage('Verificar PHP instalado') {
+            steps {
+                sh 'php -v'
+            }
+        }
+
+        stage('Pruebas básicas') {
+            steps {
+                sh 'php -l index.php'  // analiza si hay errores de sintaxis
+            }
+        }
+
+        stage('Desplegar') {
+            steps {
+                echo 'Aquí iría el despliegue manual o copia al servidor si aplica.'
+            }
+        }
+    }
+}
