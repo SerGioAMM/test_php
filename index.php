@@ -117,6 +117,8 @@
             <h1>🔓 Sistema de Comentarios Vulnerable</h1>
             <p>Aplicación PHP para Laboratorio de Seguridad</p>
         </div>
+
+        <?php if ?>
         
         <div class="warning">
             ⚠️ SOLO PARA LABORATORIO - CONTIENE VULNERABILIDADES INTENCIONALES
