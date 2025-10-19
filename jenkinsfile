@@ -15,7 +15,7 @@ pipeline {
         stage ( 'SonarQube Analysis' ) { 
             steps { 
                 withSonarQubeEnv ( 'sonar' ) { 
-                    sh '' 'mvn clean verify sonar:sonar -Dsonar.projectKey=test_php -Dsonar.projectName=' test_php ' -Dsonar.host.url=http://192.168.100.236:9000' ''  //el puerto 9000 es el predeterminado para sonar 
+                    sh '''mvn clean verify sonar:sonar -Dsonar.projectKey=test_php -Dsonar.projectName=test_php -Dsonar.host.url=http://192.168.100.236:9000'''
                     echo  'SonarQube Analysis Completed'
                 } 
             } 
