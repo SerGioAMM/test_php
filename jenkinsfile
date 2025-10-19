@@ -23,8 +23,16 @@ node {
         pip install -r requirements.txt
       '''
 
+        sh '''
+        set -e
+        . .venv/bin/activate
+        ./.venv/bin/python3 generate_report_md.py --sonar-url http://192.168.100.236:9000 --project-key test_php --token squ_a34d504f161871677db51e605aa7279670cb3abc --output report.md --template report_template.md.j2
+        # convertir a PDF con pandoc usando xelatex (asegúrate de tener pandoc y texlive instalados)
+        pandoc report.md -o report.pdf --pdf-engine=xelatex -V geometry:margin=1in -V fontsize=11pt
+      '''
+
       // Run script to generate PDF report (script placed in repo or workspace)
-      sh "python3 generate_report.py --sonar-url http://192.168.100.236:9000 --project-key test_php --token squ_a34d504f161871677db51e605aa7279670cb3abc --output report.pdf"
+      //sh "python3 generate_report.py --sonar-url http://192.168.100.236:9000 --project-key test_php --token squ_a34d504f161871677db51e605aa7279670cb3abc --output report.pdf"
 
       // Send the PDF by email using Email Extension plugin
       // Make sure Jenkins has SMTP configured and Email Extension plugin installed.

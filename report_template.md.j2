@@ -1,0 +1,32 @@
+# Informe SonarQube - {{ project_key }}
+
+## Métricas principales
+
+| Métrica | Valor |
+|---|---|
+{% for k, v in measures.items() %}
+| {{ k }} | {{ v }} |
+{% endfor %}
+
+---
+
+## Últimos análisis (hasta {{ analyses|length }})
+
+{% for a in analyses %}
+- {{ a.date }} — id: {{ a.key }} — eventos: {{ a.events|length if a.events is defined else 'N/A' }}
+{% endfor %}
+
+---
+
+## Issues (primeros {{ issues|length }})
+_Se listan issues abiertos (tipo, severidad, mensaje y ubicación)._
+
+| Tipo | Severidad | Mensaje | Archivo | Línea |
+|---:|---|---|---|---:|
+{% for it in issues %}
+| {{ it.type }} | {{ it.severity }} | {{ it.message | replace('\n',' ') | truncate(120) }} | {{ it.component.split(':')[-1] }} | {{ it.line or '' }} |
+{% endfor %}
+
+---
+
+_Generado por Jenkins/SonarQube API._

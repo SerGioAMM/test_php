@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Informe SonarQube - {{ project_key }}</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    h1, h2 { color: #2b5f8a; }
+    table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background: #f3f6fa; }
+    .metric { font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h1>Informe SonarQube - {{ project_key }}</h1>
+  <h2>Métricas</h2>
+  <table>
+    <thead><tr><th>Métrica</th><th>Valor</th></tr></thead>
+    <tbody>
+      {% for k, v in measures.items() %}
+        <tr><td class="metric">{{ k }}</td><td>{{ v }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h2>Últimos análisis</h2>
+  <ul>
+    {% for a in analyses %}
+      <li>{{ a.date }} - ID {{ a.key }}</li>
+    {% endfor %}
+  </ul>
+
+  <h2>Issues (primeros {{ issues|length }})</h2>
+  <table>
+    <thead><tr><th>Type</th><th>Severity</th><th>Message</th><th>File</th><th>Line</th></tr></thead>
+    <tbody>
+      {% for it in issues %}
+        <tr>
+          <td>{{ it.type }}</td>
+          <td>{{ it.severity }}</td>
+          <td>{{ it.message|truncate(120) }}</td>
+          <td>{{ (it.component.split(':')[-1]) }}</td>
+          <td>{{ it.line or '' }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <footer>
+    <p>Generado por Jenkins/SonarQube</p>
+  </footer>
+</body>
+</html>
