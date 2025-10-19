@@ -11,6 +11,12 @@ pipeline {
                 echo  'Git Checkout Completed'
             } 
         } 
+        stage('Pruebas básicas') {
+            steps {
+                sh 'php -l index.php'  // analiza si hay errores de sintaxis
+                sh 'php vendor/bin/phpunit || true'
+            }
+        }
 
         stage ( 'SonarQube Analysis' ) { 
             steps { 
