@@ -1,6 +1,7 @@
 
 pipeline { 
-    agent any stages { 
+    agent any 
+    stages { 
         stage('Checkout') { 
             steps { 
                 git branch: 'main', url: 'https://github.com/SerGioAMM/test_php.git' sh 'pwd; ls -la' 
@@ -20,70 +21,3 @@ pipeline {
         } 
     }
 
-
-pipeline { 
-    agent any 
-    tools { 
-        maven 'MAVEN'
-    } 
-
-    stages { 
-        stage ( 'Git Checkout' ) { 
-            steps { 
-                checkout scmGit ( branches : [[ name : '*/main' ]], extensions : [], userRemoteConfigs : [[ url : 'https://github.com/SerGioAMM/test_php.git' ]]) 
-                echo  'Git Checkout Completed'
-            } 
-        } 
-    
-
-        stage ( 'SonarQube Analysis' ) { 
-            steps { 
-                withSonarQubeEnv ( 'sonar' ) { 
-                    sh '''mvn clean verify sonar:sonar -Dsonar.projectKey=test_php -Dsonar.projectName=test_php -Dsonar.host.url=http://192.168.100.236:9000'''
-                    echo  'SonarQube Analysis Completed'
-                } 
-            } 
-        }
-    }
-}
-/*
-pipeline {
-    agent any //dawdaw
-
-    stages {
-        stage('Clonar repositorio') {
-            steps {
-                git branch: 'main', url: 'https://github.com/SerGioAMM/test_php.git'
-            }
-        }
-
-        stage('Verificar PHP instalado') {
-            steps {
-                sh 'php -v'
-            }
-        }
-
-        stage('Pruebas básicas') {
-            steps {
-                sh 'php -l index.php'  // analiza si hay errores de sintaxis
-                sh 'php vendor/bin/phpunit || true'
-            }
-        }
-        
-        stage('Convertir reporte a PDF') {
-            steps {
-                echo 'Convirtiendo XML a PDF con Pandoc...'
-                //sh 'pandoc report_scan.xml -o report_scan.pdf'
-            }
-        }
-    
-        
-
-        stage('Desplegar') {
-            steps {
-                echo 'Aquí iría el despliegue manual o copia al servidor si aplica.'
-            }
-        }
-    }
-}
-*/
