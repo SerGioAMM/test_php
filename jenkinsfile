@@ -7,7 +7,7 @@ node {
     // 'sonar' aquí es el nombre que tengas en Manage Jenkins -> Global Tool Configuration (Sonar Scanner)
     def scannerHome = tool 'sonar' 
     // Inject token from Jenkins credentials and run scanner in SonarQube env
-    withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
+    withCredentials([string(credentialsId: '2', variable: 'SONAR_TOKEN')]) {
       withSonarQubeEnv('sonar') {
         sh "${scannerHome}/bin/sonar-scanner"
       }
