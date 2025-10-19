@@ -3,30 +3,47 @@ node {
     checkout scm
   }
 
+  stage('Prepare environment') {
+    steps {
+      // Crea virtualenv e instala dependencias locales dentro del workspace
+      sh '''
+        set -e
+        python3 -m venv .venv
+        . .venv/bin/activate
+        pip install --upgrade pip
+        pip install -r requirements.txt
+      '''
+    }
+  }
+
   stage('SonarQube Analysis') {
-    // 'sonar' aquí es el nombre que tengas en Manage Jenkins -> Global Tool Configuration (Sonar Scanner)
-    def scannerHome = tool 'sonar' 
-    // Inject token from Jenkins credentials and run scanner in SonarQube env
-    withCredentials([string(credentialsId: '2', variable: 'SONAR_TOKEN')]) {
-      withSonarQubeEnv('sonar') {
-        sh "${scannerHome}/bin/sonar-scanner"
+    steps {
+      def scannerHome = tool 'sonar' // configurar en Manage Jenkins -> Global Tool Config
+      withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
+        withSonarQubeEnv('sonar') {
+          sh "${scannerHome}/bin/sonar-scanner"
+        }
       }
+    }
+  }
 
-      // Wait a few seconds for Sonar to register the analysis (optional)
-      sleep time: 5, unit: 'SECONDS'
+  stage('Generate PDF report') {
+    steps {
+      // Ejecuta el script dentro del virtualenv. Si wkhtmltopdf está en PATH del sistema, no hace falta pasar ruta.
+      sh '''
+        set -e
+        . .venv/bin/activate
+        python3 generate_report.py --sonar-url http://192.168.100.236:9000 --project-key test_php --token ${SONAR_TOKEN} --output report.pdf --template report_template.html
+      '''
+    }
+  }
 
-      // Run script to generate PDF report (script placed in repo or workspace)
-      sh "python3 generate_report.py --sonar-url http://192.168.100.236:9000 --project-key test_php --token squ_a34d504f161871677db51e605aa7279670cb3abc --output report.pdf"
-
-      // Send the PDF by email using Email Extension plugin
-      // Make sure Jenkins has SMTP configured and Email Extension plugin installed.
-      emailext(
-        subject: "SonarQube report: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-        body: "Adjunto el informe PDF de SonarQube para el proyecto test_php.",
-        to: "sergio.zabbix01@gmail.com",
-        mimeType: 'text/html',
-        attachmentsPattern: 'report.pdf'
-      )
+  stage('Send Email') {
+    steps {
+      emailext subject: "SonarQube report: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+              body: "Adjunto el informe PDF de SonarQube para test_php.",
+              to: "sergio.zabbix01@gmail.com",
+              attachmentsPattern: "report.pdf"
     }
   }
 }
