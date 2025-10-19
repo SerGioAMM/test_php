@@ -1,23 +1,45 @@
+    pipeline {
+    agent any
 
-pipeline { 
-    agent any 
-    stages { 
-        stage('Checkout') { 
-            steps { 
-                git branch: 'main', url: 'https://github.com/SerGioAMM/test_php.git' sh 'pwd; ls -la' 
-                } 
-            } 
-            
-            stage('SonarQube Analysis') { 
-                steps { 
-                    withCredentials([string(credentialsId: '2', variable: 'SONAR_TOKEN')]) 
-                    { sh ''' sonar-scanner
-                    -Dsonar.projectKey=test_php
-                    -Dsonar.projectName=test_php
-                    -Dsonar.host.url=http://192.168.100.236:9000
-                    -Dsonar.login=$SONAR_TOKEN ''' } 
-                } 
-            } 
-        } 
+    environment {
+        SONAR_HOST_URL = 'http://192.168.100.236:9000'
     }
 
+    stages {
+        stage('Checkout') {
+        steps {
+            // checkout simple y ver qué archivos hay
+            git branch: 'main', url: 'https://github.com/SerGioAMM/test_php.git'
+            sh 'pwd; ls -la'
+        }
+        }
+
+        stage('SonarQube Analysis') {
+        steps {
+            // Injecta el token almacenado en Jenkins (id = sonar-token) como variable SONAR_TOKEN
+            withCredentials([string(credentialsId: '2', variable: 'SONAR_TOKEN')]) {
+            // Ejecuta el scanner desde Docker (necesitas docker en el agente)
+            sh '''
+                docker run --rm \
+                -e SONAR_HOST_URL=${SONAR_HOST_URL} \
+                -e SONAR_LOGIN=${SONAR_TOKEN} \
+                -v "$(pwd)":/usr/src \
+                -w /usr/src \
+                sonarsource/sonar-scanner-cli \
+                sonar-scanner \
+                    -Dsonar.projectKey=test_php \
+                    -Dsonar.projectName=test_php \
+                    -Dsonar.host.url=${SONAR_HOST_URL} \
+                    -Dsonar.login=${SONAR_TOKEN}
+            '''
+            }
+        }
+        }
+    }
+
+    post {
+        always {
+        echo 'Pipeline finalizado'
+        }
+    }
+    }
