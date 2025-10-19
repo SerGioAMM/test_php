@@ -15,13 +15,6 @@ node {
       // Wait a few seconds for Sonar to register the analysis (optional)
       sleep time: 5, unit: 'SECONDS'
 
-    sh '''
-        set -e
-        python3 -m venv .venv
-        . .venv/bin/activate
-        pip install --upgrade pip
-        pip install -r requirements.txt
-      '''
 
         sh '''
         set -e
