@@ -1,37 +1,11 @@
-pipeline {
-  agent any
-
-  environment {
-    SONAR_HOST_URL = 'http://192.168.100.236:9000'
+node {
+  stage('SCM') {
+    checkout scm
   }
-
-  stages {
-    stage('Checkout') {
-      steps {
-        git branch: 'main', url: 'https://github.com/SerGioAMM/test_php.git'
-        sh 'pwd; ls -la'
-      }
-    }
-
-    stage('SonarQube Analysis') {
-      steps {
-        withCredentials([string(credentialsId: '2', variable: 'SONAR_TOKEN')]) {
-          // Ejecuta sonar-scanner instalado en el agente (no usa docker)
-          sh '''
-            sonar-scanner \
-              -Dsonar.projectKey=test_php \
-              -Dsonar.projectName=test_php \
-              -Dsonar.host.url=http://192.168.100.236:9000/\
-              -Dsonar.login=squ_a34d504f161871677db51e605aa7279670cb3abc
-          '''
-        }
-      }
-    }
-  }
-
-  post {
-    always {
-      echo 'Pipeline finalizado'
+  stage('SonarQube Analysis') {
+    def scannerHome = tool 'SonarScanner';
+    withSonarQubeEnv() {
+      sh "${scannerHome}/bin/sonar-scanner"
     }
   }
 }
