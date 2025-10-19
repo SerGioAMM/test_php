@@ -1,3 +1,26 @@
+
+pipeline { 
+    agent any stages { 
+        stage('Checkout') { 
+            steps { 
+                git branch: 'main', url: 'https://github.com/SerGioAMM/test_php.git' sh 'pwd; ls -la' 
+                } 
+            } 
+            
+            stage('SonarQube Analysis') { 
+                steps { 
+                    withCredentials([string(credentialsId: '2', variable: 'SONAR_TOKEN')]) 
+                    { sh ''' sonar-scanner
+                    -Dsonar.projectKey=test_php
+                    -Dsonar.projectName=test_php
+                    -Dsonar.host.url=http://192.168.100.236:9000
+                    -Dsonar.login=$SONAR_TOKEN ''' } 
+                } 
+            } 
+        } 
+    }
+
+
 pipeline { 
     agent any 
     tools { 
