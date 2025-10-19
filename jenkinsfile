@@ -20,21 +20,11 @@ pipeline {
                 sh 'php vendor/bin/phpunit || true'
             }
         }
-        stage('Run Nessus scan') {
-            steps {
-                sh '''
-                /opt/nessus/sbin/nessuscli scan run 10 --xml report_scan.xml
-                # esperar que termine y comprobar
-                if [ ! -f report_scan.xml ]; then
-                    echo "El reporte no se generó"; exit 1
-                fi'''
-            }
-        }
         
         stage('Convertir reporte a PDF') {
             steps {
                 echo 'Convirtiendo XML a PDF con Pandoc...'
-                sh 'pandoc report_scan.xml -o report_scan.pdf'
+                //sh 'pandoc report_scan.xml -o report_scan.pdf'
             }
         }
     

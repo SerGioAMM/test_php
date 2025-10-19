@@ -86,7 +86,7 @@ md_content = f"""# Reporte de Escaneo Nessus
 - High: {severity_counts['high']}
 - Critical: {severity_counts['critical']}
 
-{md_content[2:]}  # Quita el ## duplicado
+{md_content[2:]}
 """
 
 # Guardar MD
