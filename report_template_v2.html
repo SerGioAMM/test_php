@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Informe SonarQube - {{ project_key }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: "Helvetica Neue", Arial, sans-serif; color: #222; margin: 20px; }
+    header { border-bottom: 2px solid #2b5f8a; padding-bottom: 10px; margin-bottom: 15px; }
+    h1 { color: #2b5f8a; margin: 0; }
+    .meta { color: #666; font-size: 0.9em; }
+    .metrics { display:flex; gap:12px; flex-wrap:wrap; margin: 12px 0 20px; }
+    .metric { background:#f6f9fc; border:1px solid #e1ecf8; padding:10px 14px; border-radius:6px; min-width:140px; }
+    table { width:100%; border-collapse: collapse; margin-top: 8px; }
+    th, td { border:1px solid #ddd; padding:8px; text-align:left; vertical-align:top; }
+    th { background:#f1f5f9; }
+    .sev-CRITICAL { color: #8b0000; font-weight:bold; }
+    .sev-BLOCKER { color: #7f0000; font-weight:bold; }
+    .sev-MAJOR { color: #d9534f; }
+    .sev-MINOR { color: #f0ad4e; }
+    .sev-INFO { color: #5bc0de; }
+    .footer { margin-top: 30px; font-size: 0.9em; color:#666; border-top:1px solid #eee; padding-top:10px; }
+    .toc { margin:10px 0; }
+    .muted { color:#777; font-size:0.95em; }
+    /* responsive small */
+    @media print {
+      body { margin: 10px; }
+      .metrics { gap:8px; }
+      table { font-size: 10pt; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Informe SonarQube — {{ project_key }}</h1>
+    <div class="meta">Fuente: <a href="{{ sonar_url }}/dashboard?id={{ project_key }}">{{ sonar_url }}/dashboard?id={{ project_key }}</a></div>
+  </header>
+
+  <section>
+    <h2>Métricas principales</h2>
+    <div class="metrics">
+      {% for k, v in measures.items() %}
+        <div class="metric"><strong>{{ k }}</strong><div class="muted">{{ v }}</div></div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section>
+    <h2>Últimos análisis</h2>
+    <ul>
+      {% for a in analyses %}
+        <li>{{ a.date }} — id: {{ a.key }}</li>
+      {% endfor %}
+    </ul>
+  </section>
+
+  <section>
+    <h2>Issues (primeros {{ issues|length }})</h2>
+    <table>
+      <thead><tr><th>Tipo</th><th>Severidad</th><th>Mensaje</th><th>Archivo</th><th>Línea</th></tr></thead>
+      <tbody>
+      {% for it in issues %}
+        <tr>
+          <td>{{ it.type }}</td>
+          <td class="sev-{{ it.severity }}">{{ it.severity }}</td>
+          <td>{{ it.message | e }}</td>
+          <td>{{ (it.component.split(':')[-1]) }}</td>
+          <td>{{ it.line or '' }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <div class="footer">
+    Generado por Jenkins / SonarQube API
+  </div>
+</body>
+</html>
