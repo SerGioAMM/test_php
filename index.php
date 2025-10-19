@@ -121,7 +121,7 @@
         <div class="warning">
             ⚠️ SOLO PARA LABORATORIO - CONTIENE VULNERABILIDADES INTENCIONALES
         </div>
-        
+        <?pp
         <div class="content">
             <div class="vuln-info">
                 <h3>🐛 Vulnerabilidades Implementadas:</h3>
