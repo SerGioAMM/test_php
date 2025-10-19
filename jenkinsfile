@@ -1,7 +1,7 @@
 pipeline { 
     agent any 
     tools { 
-        maven 'Maven'
+        maven 'MAVEN'
     } 
 
     stages { 
@@ -15,7 +15,7 @@ pipeline {
         stage ( 'SonarQube Analysis' ) { 
             steps { 
                 withSonarQubeEnv ( 'ServerNameSonar' ) { 
-                    bat '' 'mvn clean verify sonar:sonar -Dsonar.projectKey=ProjectNameSonar -Dsonar.projectName=' ProjectNameSonar ' -Dsonar.host.url=http://localhost:9000' ''  //el puerto 9000 es el predeterminado para sonar 
+                    bat '' 'mvn clean verify sonar:sonar -Dsonar.projectKey=test_php -Dsonar.projectName=' test_php ' -Dsonar.host.url=http://192.168.100.236:9000' ''  //el puerto 9000 es el predeterminado para sonar 
                     echo  'SonarQube Analysis Completed'
                 } 
             } 
