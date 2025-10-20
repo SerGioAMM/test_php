@@ -25,10 +25,12 @@ node {
     // set -e
     //     . .venv/bin/activate
     //     ./.venv/bin/p
+      
 
+      //! Generar reporte PDF desde SonarQube <IP_ADDRESS>:9000
         sh '''
         python3 generate_report_md.py --sonar-url http://192.168.100.236:9000 --project-key test_php --token squ_a34d504f161871677db51e605aa7279670cb3abc --output report.md --template report_template.md.j2
-        # convertir a PDF con pandoc usando xelatex (asegúrate de tener pandoc y texlive instalados)
+        # convertir a PDF con pandoc usando xelatex o wkhtmltopdf
         pandoc report.md -o reporte.html
         wkhtmltopdf --enable-local-file-access reporte.html reporte.pdf
       '''
@@ -42,9 +44,9 @@ node {
       emailext(
         subject: "SonarQube report: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
         body: "Adjunto el informe PDF de SonarQube para el proyecto test_php.",
-        to: "sergio.zabbix01@gmail.com",
+        to: "sergio.zabbix01@gmail.com, equipoti.vg@gmail.com",
         mimeType: 'text/html',
-        attachmentsPattern: 'report.pdf'
+        attachmentsPattern: 'reporte.pdf'
       )
     }
   }
