@@ -1,0 +1,53 @@
+node {
+  stage('SCM') {
+    checkout scm
+  }
+
+  stage('SonarQube Analysis') {
+    // 'sonar' aquí es el nombre que tengas en Manage Jenkins -> Global Tool Configuration (Sonar Scanner)
+    def scannerHome = tool 'sonar' 
+    // Inject token from Jenkins credentials and run scanner in SonarQube env
+    withCredentials([string(credentialsId: '2', variable: 'SONAR_TOKEN')]) {
+      withSonarQubeEnv('sonar') {
+        sh "${scannerHome}/bin/sonar-scanner"
+      }
+
+      // Wait a few seconds for Sonar to register the analysis (optional)
+      sleep time: 5, unit: 'SECONDS'
+
+    // sh '''
+    //     set -e
+    //     python3 -m venv .venv
+    //     . .venv/bin/activate
+    //     pip install --upgrade pip
+    //     pip install -r requirements.txt
+    //   '''
+    // set -e
+    //     . .venv/bin/activate
+    //     ./.venv/bin/p
+      
+
+      //! Generar reporte PDF desde SonarQube <IP_ADDRESS>:9000
+        sh '''
+        python3 generate_report_md.py --sonar-url http://192.168.1.17:9000 --project-key test_php --token squ_a34d504f161871677db51e605aa7279670cb3abc --output report.md --template report_template.md.j2
+        # convertir a PDF con pandoc usando xelatex o wkhtmltopdf
+        pandoc report.md -o reporte.html
+        wkhtmltopdf --enable-local-file-access reporte.html reporte.pdf
+      '''
+        //pandoc report.md -o report.pdf --pdf-engine=xelatex -V geometry:margin=1in -V fontsize=11pt
+
+      // Run script to generate PDF report (script placed in repo or workspace)
+      //sh "python3 generate_report.py --sonar-url http://192.168.100.236:9000 --project-key test_php --token squ_a34d504f161871677db51e605aa7279670cb3abc --output report.pdf"
+
+      // Send the PDF by email using Email Extension plugin
+      // Make sure Jenkins has SMTP configured and Email Extension plugin installed.
+      emailext(
+        subject: "SonarQube report: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+        body: "Adjunto el informe PDF de SonarQube para el proyecto test_php.",
+        to: "sergio.zabbix01@gmail.com, equipoti.vg@gmail.com",
+        mimeType: 'text/html',
+        attachmentsPattern: 'reporte.pdf'
+      )
+    }
+  }
+}

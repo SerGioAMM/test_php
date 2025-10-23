@@ -1,18 +1,120 @@
 node {
+  def hostIP = '' //IP del servidor donde corre Jenkins
+  def sonarUrl = '' //URL de SonarQube construida dinámicamente
+  def projectKey = 'test_php' //Clave del proyecto en SonarQube
+  def reportRecipients = 'sergio.zabbix01@gmail.com, equipoti.vg@gmail.com' //Destinatarios del reporte
+
+  stage('1. Checkout') {
+    echo 'Descargando código del repositorio...'
+    checkout scm
+  }
+
+  stage('2. Obtener IP del Host') {
+    echo 'Obteniendo IP del host...'
+    script {
+      hostIP = sh(script: "hostname -I | awk '{print \$1}'", returnStdout: true).trim()
+      sonarUrl = "http://${hostIP}:9000"
+      echo "✅ IP del host: ${hostIP}"
+      echo "✅ URL de SonarQube: ${sonarUrl}"
+    }
+  }
+
+  stage('3. Análisis SonarQube') {
+    echo '🔬 Ejecutando análisis de SonarQube...'
+    script {
+      def scannerHome = tool 'sonar'
+      
+      withCredentials([string(credentialsId: '2', variable: 'SONAR_TOKEN')]) {
+        withSonarQubeEnv('sonar') {
+          sh "${scannerHome}/bin/sonar-scanner"
+        }
+      }
+      
+      echo '⏳ Esperando a que SonarQube procese los resultados...'
+      sleep time: 5, unit: 'SECONDS'
+    }
+  }
+
+  stage('4. Preparar Entorno Python') {
+    echo 'Configurando entorno virtual de Python...'
+    sh '''
+      set -e
+      python3 -m venv .venv
+      . .venv/bin/activate
+      pip install --upgrade pip
+      pip install -r requirements.txt
+    '''
+  }
+
+  stage('5. Generar Reporte HTML') {
+    echo 'Generando reporte HTML desde SonarQube...'
+    script {
+      withCredentials([string(credentialsId: '2', variable: 'SONAR_TOKEN')]) {
+        //! Generar reporte PDF desde SonarQube <IP_ADDRESS>:9000
+        sh """
+          python3 generate_report_html.py \
+            --sonar-url ${sonarUrl} \
+            --project-key ${projectKey} \
+            --token ${SONAR_TOKEN} \
+            --output report.html \
+            --template report_template_v2.html
+        """
+        echo '✅ Reporte HTML generado exitosamente'
+      }
+    }
+  }
+
+  stage('6. Convertir a PDF') {
+    echo 'Convirtiendo reporte a formato PDF...'
+    sh '''
+      # Convertir con pandoc
+      pandoc report.html -o reporte_pandoc.pdf
+      
+      # Convertir con wkhtmltopdf
+      wkhtmltopdf --enable-local-file-access report.html reporte_wkhtmltopdf.pdf
+    '''
+    echo '✅ Reportes PDF generados exitosamente'
+  }
+
+  stage('7. Enviar Reporte por Email') {
+    echo 'Enviando reporte por correo electrónico...'
+    emailext(
+      subject: "✅ SonarQube Report: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+      body: """
+        <h2>Informe de Análisis SonarQube</h2>
+        <p><strong>Proyecto:</strong> ${projectKey}</p>
+        <p><strong>Build:</strong> #${env.BUILD_NUMBER}</p>
+        <p><strong>SonarQube URL:</strong> <a href="${sonarUrl}">${sonarUrl}</a></p>
+        <p><strong>IP del Host:</strong> ${hostIP}</p>
+        <hr>
+        <p>Adjunto encontrarás los informes PDF generados con diferentes herramientas.</p>
+      """,
+      to: reportRecipients,
+      mimeType: 'text/html',
+      attachmentsPattern: 'reporte_pandoc.pdf, reporte_wkhtmltopdf.pdf'
+    )
+    echo '✅ Email enviado exitosamente'
+  }
+
+  stage('8. Limpieza') {
+    echo '🧹 Limpiando archivos temporales...'
+    sh '''
+      # Opcional: limpiar archivos temporales si es necesario
+      # rm -rf .venv
+    '''
+    echo '✅ Archivos temporales eliminados'
+  }
+}
+/*
+node {
   stage('SCM') {
     checkout scm
   }
 
   stage('SonarQube Analysis') {
     // 'sonar' aquí es el nombre que tengas en Manage Jenkins -> Global Tool Configuration (Sonar Scanner)
-    def scannerHome = tool 'sonar' 
-    // Inject token from Jenkins credentials and run scanner in SonarQube env
-    withCredentials([string(credentialsId: '2', variable: 'SONAR_TOKEN')]) {
-      withSonarQubeEnv('sonar') {
-        sh "${scannerHome}/bin/sonar-scanner"
-      }
+    
 
-      // Wait a few seconds for Sonar to register the analysis (optional)
       sleep time: 5, unit: 'SECONDS'
 
     // sh '''
@@ -29,25 +131,19 @@ node {
 
       //! Generar reporte PDF desde SonarQube <IP_ADDRESS>:9000
         sh '''
-        python3 generate_report_md.py --sonar-url http://192.168.1.17:9000 --project-key test_php --token squ_a34d504f161871677db51e605aa7279670cb3abc --output report.md --template report_template.md.j2
+        python3 generate_report_html.py --sonar-url http://192.168.1.17:9000 --project-key test_php --token squ_a34d504f161871677db51e605aa7279670cb3abc --output report.html --template report_template_v2.html
         # convertir a PDF con pandoc usando xelatex o wkhtmltopdf
-        pandoc report.md -o reporte.html
-        wkhtmltopdf --enable-local-file-access reporte.html reporte.pdf
+        pandoc reporte.html -o reporte_pandoc.pdf
+        wkhtmltopdf --enable-local-file-access reporte.html reporte_wkhtmltopdf.pdf
       '''
-        //pandoc report.md -o report.pdf --pdf-engine=xelatex -V geometry:margin=1in -V fontsize=11pt
 
-      // Run script to generate PDF report (script placed in repo or workspace)
-      //sh "python3 generate_report.py --sonar-url http://192.168.100.236:9000 --project-key test_php --token squ_a34d504f161871677db51e605aa7279670cb3abc --output report.pdf"
-
-      // Send the PDF by email using Email Extension plugin
-      // Make sure Jenkins has SMTP configured and Email Extension plugin installed.
       emailext(
         subject: "SonarQube report: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
         body: "Adjunto el informe PDF de SonarQube para el proyecto test_php.",
         to: "sergio.zabbix01@gmail.com, equipoti.vg@gmail.com",
         mimeType: 'text/html',
-        attachmentsPattern: 'reporte.pdf'
+        attachmentsPattern: 'reporte_pandoc.pdf, reporte_wkhtmltopdf.pdf'
       )
     }
   }
-}
+}*/
