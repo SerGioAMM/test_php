@@ -18,7 +18,7 @@ node {
       echo "✅ URL de SonarQube: ${sonarUrl}"
     }
   }
-/*
+
   stage('3. Análisis SonarQube') {
     echo '🔬 Ejecutando análisis de SonarQube...'
     script {
@@ -33,7 +33,7 @@ node {
       echo '⏳ Esperando a que SonarQube procese los resultados...'
       sleep time: 5, unit: 'SECONDS'
     }
-  }*/
+  }
 
   stage('4. Preparar Entorno Python') {
     echo 'Configurando entorno virtual de Python...'
@@ -105,6 +105,9 @@ node {
     echo '✅ Archivos temporales eliminados'
   }
 }
+
+
+
 /*
 node {
   stage('SCM') {
