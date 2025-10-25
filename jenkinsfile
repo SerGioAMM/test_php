@@ -129,11 +129,10 @@ node {
         <p><strong>Proyecto:</strong> ${projectKey}</p>
         <p><strong>Build:</strong> #${env.BUILD_NUMBER}</p>
         <p><strong>SonarQube URL:</strong> <a href="${sonarUrl}">${sonarUrl}</a></p>
-        <p><strong>IP del Host:</strong> ${hostIP}</p>
         <hr>
         ${despliegue_msg}
         <hr>
-        <p>Adjunto encontrarás los informes PDF generados.</p>
+        <p>Adjunto informe PDF generado.</p>
       """
       emailext(
         subject: subject,
