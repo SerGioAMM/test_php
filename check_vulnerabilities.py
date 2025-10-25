@@ -2,39 +2,58 @@
 """
 check_vulnerabilities.py report_summary.json
 
-Lee report_summary.json y devuelve:
- - exit 0 si no hay vulnerabilidades bloqueantes
- - exit 1 si hay >=1 vulnerabilidad en severidad bloqueante (critical/major)
-Por defecto también trata "high" como bloqueante (ajústalo si prefieres).
+Salida:
+ - Primera línea: "true"  -> OK para desplegar (no hay vulnerabilidades bloqueantes)
+                 "false" -> NO ok para desplegar (hay vulnerabilidades bloqueantes)
+ - Líneas siguientes: mensaje legible para logs / email.
+
+Exit codes:
+ - 0 : ejecución correcta (tanto true como false)
+ - 2 : error leyendo/parsing del archivo summary (archivo ausente o corrupto)
 """
 import sys
 import json
+import argparse
 
 def main():
-    if len(sys.argv) < 2:
-        print("Uso: check_vulnerabilities.py <report_summary.json>")
-        return 2
+    ap = argparse.ArgumentParser()
+    ap.add_argument('summary', help='report_summary.json')
+    ap.add_argument('--blocking', '-b', default='critical,major,high',
+                    help='Coma-separated severities consideradas bloqueantes (por defecto: critical,major,high)')
+    args = ap.parse_args()
 
-    path = sys.argv[1]
     try:
-        js = json.load(open(path, 'r'))
+        with open(args.summary, 'r', encoding='utf-8') as fh:
+            js = json.load(fh)
     except Exception as e:
-        print("ERROR leyendo summary:", e)
+        print(f"ERROR leyendo summary: {e}", file=sys.stderr)
         return 2
 
-    # severidades que consideramos bloqueantes
-    blocking = ['critical', 'major', 'high']
+    blocking = [s.strip().lower() for s in args.blocking.split(',') if s.strip()]
     total_blocking = 0
+    details = []
     for sev in blocking:
-        total_blocking += int(js.get(sev, 0))
+        try:
+            count = int(js.get(sev, 0))
+        except Exception:
+            count = 0
+        total_blocking += count
+        details.append(f"{sev}={count}")
 
-    print("Resumen de severidades encontrado:", js)
+    # Primera línea: booleano simple
     if total_blocking > 0:
-        print(f"Vulnerabilidades bloqueantes detectadas: {total_blocking} (severidades: {blocking})")
-        return 1
-
-    print("No se han detectado vulnerabilidades bloqueantes. OK para desplegar.")
-    return 0
+        # false -> no desplegar
+        print("false")
+        print("Despliegue abortado: se detectaron vulnerabilidades bloqueantes.")
+        print("Detalles:", ", ".join(details))
+        print(f"Total bloqueantes: {total_blocking}")
+        return 0
+    else:
+        # true -> ok desplegar
+        print("true")
+        print("Despliegue autorizado: no se detectaron vulnerabilidades bloqueantes.")
+        print("Detalles:", ", ".join(details))
+        return 0
 
 if __name__ == '__main__':
     sys.exit(main())

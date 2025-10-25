@@ -76,24 +76,96 @@ node {
     echo '✅ Reportes PDF generados exitosamente'
   }
 
-  stage('7. Enviar Reporte por Email') {
-    echo 'Enviando reporte por correo electrónico...'
-    emailext(
-      subject: "✅ SonarQube Report: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-      body: """
-        <h2>Informe de Análisis SonarQube</h2>
-        <p><strong>Proyecto:</strong> ${projectKey}</p>
-        <p><strong>Build:</strong> #${env.BUILD_NUMBER}</p>
-        <p><strong>SonarQube URL:</strong> <a href="${sonarUrl}">${sonarUrl}</a></p>
-        <p><strong>IP del Host:</strong> ${hostIP}</p>
-        <hr>
-        <p>Adjunto encontrarás los informes PDF generados con diferentes herramientas.</p>
-      """,
-      to: reportRecipients,
-      mimeType: 'text/html',
-      attachmentsPattern: """reporte_${projectKey}_${env.BUILD_NUMBER}.pdf"""
-    )
-    echo '✅ Email enviado exitosamente'
+  // stage('7. Enviar Reporte por Email') {
+  //   echo 'Enviando reporte por correo electrónico...'
+  //   emailext(
+  //     subject: "✅ SonarQube Report: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+  //     body: """
+  //       <h2>Informe de Análisis SonarQube</h2>
+  //       <p><strong>Proyecto:</strong> ${projectKey}</p>
+  //       <p><strong>Build:</strong> #${env.BUILD_NUMBER}</p>
+  //       <p><strong>SonarQube URL:</strong> <a href="${sonarUrl}">${sonarUrl}</a></p>
+  //       <p><strong>IP del Host:</strong> ${hostIP}</p>
+  //       <hr>
+  //       <p>Adjunto encontrarás los informes PDF generados con diferentes herramientas.</p>
+  //     """,
+  //     to: reportRecipients,
+  //     mimeType: 'text/html',
+  //     attachmentsPattern: """reporte_${projectKey}_${env.BUILD_NUMBER}.pdf"""
+  //   )
+  //   echo '✅ Email enviado exitosamente'
+  // }
+
+  stage('9. Comprobar vulnerabilidades (umbral de despliegue)') {
+    steps {
+      script {
+        // Ejecuta el script y captura su salida
+        def out = sh(script: "python3 check_vulnerabilities.py report_summary.json", returnStdout: true).trim()
+        // out tiene la salida multi-line; la primera línea es true/false
+        def firstLine = out.tokenize('\n')[0].trim().toLowerCase()
+        echo "check_vulnerabilities output (raw):\n${out}"
+        if (firstLine == 'true') {
+          deploy_ok = true
+          despliegue_msg = "<h3 style='color:green'>Despliegue autorizado</h3><p>No se detectaron vulnerabilidades peligrosas.</p><pre>${out}</pre>"
+          echo "➡️ Deploy OK según summary: deploy_ok=true"
+        } else if (firstLine == 'false') {
+          deploy_ok = false
+          despliegue_msg = "<h3 style='color:red'>Despliegue abortado</h3><p>Se detectaron vulnerabilidades peligrosas. No se ejecutará el despliegue automático.</p><pre>${out}</pre>"
+          echo "➡️ Deploy NOT OK según summary: deploy_ok=false"
+        } else {
+          // salida inesperada: tratar como error de verificación
+          deploy_ok = false
+          despliegue_msg = "<h3 style='color:orange'>Verificación inválida</h3><p>Salida inesperada del verificador. Revisa los logs.</p><pre>${out}</pre>"
+          echo "⚠️ Salida inesperada del script de comprobación: ${firstLine}"
+        }
+      }
+    }
+  }
+
+  stage('10. Despliegue') {
+    steps {
+      script {
+        if (deploy_ok) {
+          echo "Ejecutando despliegue porque deploy_ok == true"
+          sh '''
+            set -e
+            echo "Desplegando a /var/www/html/ ..."
+            sudo rsync -av --delete --exclude='.git' ./ /var/www/html/
+            echo "Despliegue completado."
+          '''
+        } else {
+          echo "Despliegue abortado por verificación de vulnerabilidades."
+        }
+      }
+    }
+  }
+
+  stage('11. Enviar Reporte por Email con estado de despliegue') {
+    steps {
+      script {
+        def subject = deploy_ok ? "Despliegue AUTORIZADO: SonarQube Report ${env.JOB_NAME} #${env.BUILD_NUMBER}" :
+                                  "Despliegue ABORTADO: SonarQube Report ${env.JOB_NAME} #${env.BUILD_NUMBER}"
+        def body = """
+          <h2>Informe de Análisis SonarQube</h2>
+          <p><strong>Proyecto:</strong> ${projectKey}</p>
+          <p><strong>Build:</strong> #${env.BUILD_NUMBER}</p>
+          <p><strong>SonarQube URL:</strong> <a href="${sonarUrl}">${sonarUrl}</a></p>
+          <p><strong>IP del Host:</strong> ${hostIP}</p>
+          <hr>
+          ${despliegue_msg}
+          <hr>
+          <p>Adjunto encontrarás los informes PDF generados.</p>
+        """
+        emailext(
+          subject: subject,
+          body: body,
+          to: reportRecipients,
+          mimeType: 'text/html',
+          attachmentsPattern: "reporte_${projectKey}_${env.BUILD_NUMBER}.pdf"
+        )
+        echo "✅ Email enviado (estado despliegue: ${deploy_ok})"
+      }
+    }
   }
 
   stage('8. Limpieza') {
@@ -103,32 +175,6 @@ node {
       # rm -rf .venv
     '''
     echo '✅ Archivos temporales eliminados'
-  }
-
-    stage('9. Comprobar vulnerabilidades (umbral de despliegue)') {
-      script {
-        // check_vulnerabilities.py devolverá exit code 1 si hay vulnerabilidades bloqueantes
-        def rc = sh(script: "python3 check_vulnerabilities.py report_summary.json", returnStatus: true)
-        if (rc != 0) {
-          // Abortamos el pipeline y marcamos fallo
-          error("Se detectaron vulnerabilidades bloqueantes (high/major/critical). Despliegue abortado.")
-        } else {
-          echo "No hay vulnerabilidades bloqueantes: Listo para desplegar."
-        }
-      }
-    }
-
-    stage('10. Despliegue') {
-      // Despliegue sencillo al /var/www/html
-      // IMPORTANTE: el agente que ejecute este paso debe tener permisos (sudo) o Jenkins corriendo con los permisos necesarios.
-      // Usamos rsync para excluir .git y sincronizar limpiamente.
-      sh '''
-        set -e
-        echo "Desplegando a /var/www/html/ ..."
-        sudo rsync -av --delete --exclude='.git' ./ /var/www/html/
-        echo "Despliegue completado."
-      '''
-    }
   }
 
   post {
