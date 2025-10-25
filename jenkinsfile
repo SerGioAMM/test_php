@@ -66,13 +66,13 @@ node {
 
   stage('6. Convertir a PDF') {
     echo 'Convirtiendo reporte a formato PDF...'
-    sh '''
+    sh """
       # Convertir con pandoc
       #pandoc report.html -o reporte_pandoc.pdf
       
       # Convertir con wkhtmltopdf
-      wkhtmltopdf --enable-local-file-access report.html reporte_wkhtmltopdf.pdf
-    '''
+      wkhtmltopdf --enable-local-file-access report.html reporte_${projectKey}_${env.BUILD_NUMBER}.pdf
+    """
     echo '✅ Reportes PDF generados exitosamente'
   }
 
