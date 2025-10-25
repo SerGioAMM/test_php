@@ -91,7 +91,7 @@ node {
       """,
       to: reportRecipients,
       mimeType: 'text/html',
-      attachmentsPattern: "reporte_" + projectKey + "_" + env.BUILD_NUMBER + ".pdf"
+      attachmentsPattern: """reporte_${projectKey}_${env.BUILD_NUMBER}.pdf"""
     )
     echo '✅ Email enviado exitosamente'
   }
@@ -111,7 +111,7 @@ node {
         def rc = sh(script: "python3 check_vulnerabilities.py report_summary.json", returnStatus: true)
         if (rc != 0) {
           // Abortamos el pipeline y marcamos fallo
-          error("Se detectaron vulnerabilidades bloqueantes (major/critical). Despliegue abortado.")
+          error("Se detectaron vulnerabilidades bloqueantes (high/major/critical). Despliegue abortado.")
         } else {
           echo "No hay vulnerabilidades bloqueantes: Listo para desplegar."
         }
