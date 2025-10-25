@@ -79,26 +79,26 @@ node {
   stage('7. Comprobar vulnerabilidades (umbral de despliegue)') {
     script {
       // Ejecuta el script y captura su salida (multi-line)
-        def out = sh(script: "python3 check_vulnerabilities.py report_summary.json", returnStdout: true).trim()
-        // separar líneas de la salida
-        def lines = out ? out.split("\\r?\\n") : []
-        def firstLine = (lines.length > 0) ? lines[0].trim().toLowerCase() : ''
-        // detalles sin la primera línea (para el email y logs), evita mostrar "true"/"false"
-        def details = (lines.length > 1) ? (lines as List)[1..-1].join('\n') : ''
+      def out = sh(script: "python3 check_vulnerabilities.py report_summary.json", returnStdout: true).trim()
+      // separar líneas de la salida
+      def lines = out ? out.split("\\r?\\n") : []
+      def firstLine = (lines.length > 0) ? lines[0].trim().toLowerCase() : ''
+      // detalles sin la primera línea (para el email y logs), evita mostrar "true"/"false"
+      def details = (lines.length > 1) ? (lines as List)[1..-1].join('\n') : ''
 
       echo "check_vulnerabilities output (raw):\n${out}"
       if (firstLine == 'true') {
         deploy_ok = true
-        despliegue_msg = "<h3 style='color:green'>Despliegue autorizado</h3><p>No se detectaron vulnerabilidades peligrosas.</p><pre>${out}</pre>"
+        despliegue_msg = "<h3 style='color:green'>Despliegue autorizado</h3><p>No se detectaron vulnerabilidades peligrosas.</p><pre>${details}</pre>"
         echo "➡️ Deploy OK según summary: deploy_ok=true"
       } else if (firstLine == 'false') {
         deploy_ok = false
-        despliegue_msg = "<h3 style='color:red'>Despliegue abortado</h3><p>Se detectaron vulnerabilidades peligrosas, no se ejecutará el despliegue automático.</p><pre>${out}</pre>"
+        despliegue_msg = "<h3 style='color:red'>Despliegue abortado</h3><p>Se detectaron vulnerabilidades peligrosas, no se ejecutará el despliegue automático.</p><pre>${details}</pre>"
         echo "➡️ Deploy NOT OK según summary: deploy_ok=false"
       } else {
         // salida inesperada: tratar como error de verificación
         deploy_ok = false
-        despliegue_msg = "<h3 style='color:orange'>Verificación inválida</h3><p>Salida inesperada del verificador. Revisa los logs.</p><pre>${out}</pre>"
+        despliegue_msg = "<h3 style='color:orange'>Verificación inválida</h3><p>Salida inesperada del verificador. Revisa los logs.</p><pre>${details}</pre>"
         echo "⚠️ Salida inesperada del script de comprobación: ${firstLine}"
       }
     }
