@@ -94,5 +94,67 @@ def main():
         print("Error:", e, file=sys.stderr)
         sys.exit(4)
 
+# --- aquí está la parte que debes insertar o adaptar al final de tu generate_report_html.py existente ---
+# Añadimos código para escribir report_summary.json con conteos por severidad.
+# Debes adaptar la extracción de la lista de vulnerabilidades según la estructura real de tu script.
+import json
+
+def _normalize_severity(s):
+    if not s:
+        return 'info'
+    s = s.strip().lower()
+    if s in ('critical',):
+        return 'critical'
+    if s in ('major', 'high', 'severe'):
+        return 'major'   # mapear "high" a "major" si lo consideras así
+    if s in ('medium','minor'):
+        return 'minor'
+    if s in ('low',):
+        return 'minor'
+    return 'info'
+
+def write_summary_from_vulns(vulns, out_path='report_summary.json'):
+    """
+    vulns: lista de dicts; cada dict debe tener alguna clave con severidad:
+      'severity', 'level' o similar. Si tu estructura es distinta, adapta aquí.
+    """
+    counts = {}
+    for v in vulns:
+        # intenta encontrar el campo de severidad
+        sev = None
+        for k in ('severity','level','severity_level','risk'):
+            if isinstance(v, dict) and k in v:
+                sev = v[k]
+                break
+        normalized = _normalize_severity(sev)
+        counts[normalized] = counts.get(normalized, 0) + 1
+
+    # Escribe también claves vacías para seguridad
+    for k in ('critical','major','minor','info'):
+        counts.setdefault(k, 0)
+
+    with open(out_path, 'w') as fh:
+        json.dump(counts, fh, indent=2)
+    print(f"Wrote vulnerability summary to {out_path}: {counts}")
+
+# === USO:
+# Al final de tu generate_report_html.py (donde ya tengas la información de vulnerabilidades),
+# llama a write_summary_from_vulns(lista_de_vulns)
+#
+# Ejemplo si tu script ya crea una variable `vulnerabilities`:
+# try:
+#     write_summary_from_vulns(vulnerabilities, 'report_summary.json')
+# except NameError:
+#     # si no existe la variable, intenta buscar en otro sitio o produce summary vacío
+#     write_summary_from_vulns([], 'report_summary.json')
+#
+# -------------------------------------------------------------------------
+# Si tu generate_report_html.py produce un JSON con todos los hallazgos, preferible:
+# - extrae la lista de hallazgos y pásala a write_summary_from_vulns
+# - Jenkins leerá report_summary.json con check_vulnerabilities.py
+
+
 if __name__ == '__main__':
     main()
+
+

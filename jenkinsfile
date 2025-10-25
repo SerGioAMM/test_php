@@ -91,7 +91,7 @@ node {
       """,
       to: reportRecipients,
       mimeType: 'text/html',
-      attachmentsPattern: 'reporte_pandoc.pdf, reporte_wkhtmltopdf.pdf'
+      attachmentsPattern: "reporte_" + projectKey + "_" + env.BUILD_NUMBER + ".pdf"
     )
     echo '✅ Email enviado exitosamente'
   }
@@ -104,6 +104,44 @@ node {
     '''
     echo '✅ Archivos temporales eliminados'
   }
+
+    stage('9. Comprobar vulnerabilidades (umbral de despliegue)') {
+      steps {
+        script {
+          // check_vulnerabilities.py devolverá exit code 1 si hay vulnerabilidades bloqueantes
+          def rc = sh(script: "python3 check_vulnerabilities.py report_summary.json", returnStatus: true)
+          if (rc != 0) {
+            // Abortamos el pipeline y marcamos fallo
+            error("Se detectaron vulnerabilidades bloqueantes (major/critical). Despliegue abortado.")
+          } else {
+            echo "No hay vulnerabilidades bloqueantes: Listo para desplegar."
+          }
+        }
+      }
+    }
+
+    stage('10. Despliegue') {
+      steps {
+        // Despliegue "sencillo" al /var/www/html
+        // IMPORTANTE: el agente que ejecute este paso debe tener permisos (sudo) o Jenkins corriendo con los permisos necesarios.
+        // Usamos rsync para excluir .git y sincronizar limpiamente.
+        sh '''
+          set -e
+          echo "Desplegando a /var/www/html/ ..."
+          sudo rsync -av --delete --exclude='.git' ./ /var/www/html/
+          echo "Despliegue completado."
+        '''
+      }
+    }
+  }
+
+  post {
+    success {
+      echo "Pipeline finalizado correctamente."
+    }
+    failure {
+      echo "Pipeline falló."
+    }
 }
 
 
