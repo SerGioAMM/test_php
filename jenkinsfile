@@ -176,14 +176,6 @@ node {
     '''
     echo '✅ Archivos temporales eliminados'
   }
-
-  post {
-    success {
-      echo "Pipeline finalizado correctamente."
-    }
-    failure {
-      echo "Pipeline falló."
-    }
 }
 
 
