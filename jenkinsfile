@@ -89,16 +89,16 @@ node {
       echo "check_vulnerabilities output (raw):\n${out}"
       if (firstLine == 'true') {
         deploy_ok = true
-        despliegue_msg = "<h3 style='color:green'>Despliegue autorizado</h3><p>No se detectaron vulnerabilidades peligrosas.</p><pre>${details}</pre>"
+        despliegue_msg = "<h3 style='color:green'>Despliegue autorizado</h3><p>No se detectaron vulnerabilidades peligrosas.</p><pre>${out}</pre>"
         echo "➡️ Deploy OK según summary: deploy_ok=true"
       } else if (firstLine == 'false') {
         deploy_ok = false
-        despliegue_msg = "<h3 style='color:red'>Despliegue abortado</h3><p>Se detectaron vulnerabilidades peligrosas, no se ejecutará el despliegue automático.</p><pre>${details}</pre>"
+        despliegue_msg = "<h3 style='color:red'>Despliegue abortado</h3><p>Se detectaron vulnerabilidades peligrosas, no se ejecutará el despliegue automático.</p><pre>${out}</pre>"
         echo "➡️ Deploy NOT OK según summary: deploy_ok=false"
       } else {
         // salida inesperada: tratar como error de verificación
         deploy_ok = false
-        despliegue_msg = "<h3 style='color:orange'>Verificación inválida</h3><p>Salida inesperada del verificador. Revisa los logs.</p><pre>${details}</pre>"
+        despliegue_msg = "<h3 style='color:orange'>Verificación inválida</h3><p>Salida inesperada del verificador. Revisa los logs.</p><pre>${out}</pre>"
         echo "⚠️ Salida inesperada del script de comprobación: ${firstLine}"
       }
     }
@@ -146,7 +146,7 @@ node {
   }
 
   stage('10. Limpieza') {
-    echo 'Limpiando archivos temporales del entorno virtual...'
+    echo 'Limpiando archivos temporales del entorno virtual.'
     sh '''
       # Limpiar archivos temporales de Python
       # rm -rf .venv
