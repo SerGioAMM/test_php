@@ -83,7 +83,7 @@ node {
       // separar líneas de la salida
       def lines = out ? out.split("\\r?\\n") : []
       def firstLine = (lines.length > 0) ? lines[0].trim().toLowerCase() : ''
-      // detalles sin la primera línea (para el email y logs), evita mostrar "true"/"false"
+      // detalles(para el email y logs)
       def details = (lines.length > 1) ? (lines as List)[1..-1].join('\n') : ''
 
       echo "check_vulnerabilities output (raw):\n${out}"
