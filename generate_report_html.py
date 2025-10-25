@@ -3,7 +3,7 @@
 generate_report_html.py
 Genera reporte HTML desde SonarQube API.
 Uso:
-  python3 generate_report_html.py --sonar-url http://192.168.100.236:9000 --project-key test_php --token <TOKEN> --output report.html --template report_template.html
+  python3 generate_report_html.py --sonar-url http://192.168.100.236:9000 --project-key test_php --token <TOKEN> --output report.html --template report_template_v2.html
 """
 import argparse
 import requests
@@ -66,7 +66,7 @@ def main():
     parser.add_argument('--project-key', required=True)
     parser.add_argument('--token', required=True)
     parser.add_argument('--output', default='report.html')
-    parser.add_argument('--template', default='report_template.html')
+    parser.add_argument('--template', default='report_template_v2.html')
     parser.add_argument('--max-issue-pages', default=5, type=int)
     args = parser.parse_args()
 
