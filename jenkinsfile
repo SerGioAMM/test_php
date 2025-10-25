@@ -20,7 +20,7 @@ node {
   }
 
   stage('3. Análisis SonarQube') {
-    echo '🔬 Ejecutando análisis de SonarQube...'
+    echo 'Ejecutando análisis de SonarQube...'
     script {
       def scannerHome = tool 'sonar'
       
@@ -30,7 +30,7 @@ node {
         }
       }
       
-      echo '⏳ Esperando a que SonarQube procese los resultados...'
+      echo 'Esperando a que SonarQube procese los resultados...'
       sleep time: 5, unit: 'SECONDS'
     }
   }
@@ -146,7 +146,7 @@ node {
   }
 
   stage('10. Limpieza') {
-    echo '🧹 Limpiando archivos temporales...'
+    echo 'Limpiando archivos temporales del entorno virtual...'
     sh '''
       # Limpiar archivos temporales de Python
       # rm -rf .venv

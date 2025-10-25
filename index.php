@@ -304,7 +304,7 @@
             ?>
 
             <style>
-                container {
+                .container {
                     background-color:green !important;
                 }
             </style>
