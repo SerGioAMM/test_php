@@ -121,9 +121,9 @@
         <div class="warning">
             ⚠️ SOLO PARA LABORATORIO - CONTIENE VULNERABILIDADES INTENCIONALES
         </div>
-        <?php echo "\n"; 
-        <div class="content" error 2>
-        
+        <?php echo "\n"; ?>
+        <div class="content">
+
             <div class="vuln-info">
                 <h3>🐛 Vulnerabilidades Implementadas:</h3>
                 <ul>
