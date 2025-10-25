@@ -4,37 +4,30 @@
   <meta charset="utf-8">
   <title>Informe SonarQube - {{ project_key }}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <!-- Chart.js CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
-    :root{
-      --blue:#2b5f8a; --muted:#666; --card-bg:#f6f9fc; --card-border:#e1ecf8;
-    }
-    body { font-family: "Helvetica Neue", Arial, sans-serif; color: #222; margin: 18px; background:#fff; }
-    header { border-bottom: 2px solid var(--blue); padding-bottom: 10px; margin-bottom: 15px; }
-    h1 { color: var(--blue); margin: 0; font-size:1.5rem; }
-    .meta { color: var(--muted); font-size: 0.9em; margin-top:6px; }
-    .container { display:flex; gap:18px; align-items:flex-start; flex-wrap:wrap; }
-    .left { flex:1 1 680px; min-width:320px; }
-    .right { width:360px; min-width:280px; }
+    body { font-family: "Helvetica Neue", Arial, sans-serif; color: #222; margin: 20px; }
+    header { border-bottom: 2px solid #2b5f8a; padding-bottom: 10px; margin-bottom: 15px; }
+    h1 { color: #2b5f8a; margin: 0; }
+    .meta { color: #666; font-size: 0.9em; }
     .metrics { display:flex; gap:12px; flex-wrap:wrap; margin: 12px 0 20px; }
-    .metric { background:var(--card-bg); border:1px solid var(--card-border); padding:12px 16px; border-radius:8px; min-width:140px; box-shadow:0 1px 0 rgba(0,0,0,0.02); }
-    .metric strong { display:block; font-size:0.85rem; color:#333; }
-    .metric .value { color:#111; font-weight:700; margin-top:6px; font-size:1.1rem; }
-    table { width:100%; border-collapse: collapse; margin-top: 8px; font-size:0.95rem; }
-    th, td { border:1px solid #eee; padding:8px; text-align:left; vertical-align:top; }
-    th { background:#fafcff; color:#333; font-weight:600; }
+    .metric { background:#f6f9fc; border:1px solid #e1ecf8; padding:10px 14px; border-radius:6px; min-width:140px; }
+    table { width:100%; border-collapse: collapse; margin-top: 8px; }
+    th, td { border:1px solid #ddd; padding:8px; text-align:left; vertical-align:top; }
+    th { background:#f1f5f9; }
     .sev-CRITICAL { color: #8b0000; font-weight:bold; }
     .sev-BLOCKER { color: #7f0000; font-weight:bold; }
     .sev-MAJOR { color: #d9534f; }
     .sev-MINOR { color: #f0ad4e; }
     .sev-INFO { color: #5bc0de; }
-    .card { background:#fff; border:1px solid #e9eef5; border-radius:8px; padding:12px; margin-bottom:12px; }
-    canvas { max-width:100%; height:200px; }
-    .small { font-size:0.85rem; color:var(--muted); }
-    .footer { margin-top: 30px; font-size: 0.9em; color:var(--muted); border-top:1px solid #eee; padding-top:10px; }
-    @media (max-width:900px){ .container{flex-direction:column} .right{width:100%} }
-    @media print { .right { display:none } } /* avoid extra side if printing raw HTML */
+    .footer { margin-top: 30px; font-size: 0.9em; color:#666; border-top:1px solid #eee; padding-top:10px; }
+    .toc { margin:10px 0; }
+    .muted { color:#777; font-size:0.95em; }
+    /* responsive small */
+    @media print {
+      body { margin: 10px; }
+      .metrics { gap:8px; }
+      table { font-size: 10pt; }
+    }
   </style>
 </head>
 <body>
@@ -43,178 +36,44 @@
     <div class="meta">Fuente: <a href="{{ sonar_url }}/dashboard?id={{ project_key }}">{{ sonar_url }}/dashboard?id={{ project_key }}</a></div>
   </header>
 
-  <div class="container">
-    <div class="left">
-      <section class="card">
-        <h2>Métricas principales</h2>
-        <div class="metrics">
-          {% for k, v in measures.items() %}
-            <div class="metric">
-              <strong>{{ k }}</strong>
-              <div class="value">{{ v }}</div>
-            </div>
-          {% endfor %}
-        </div>
-      </section>
-
-      <section class="card">
-        <h2>Últimos análisis</h2>
-        <div class="small">Mostrando {{ analyses|length }} últimos análisis</div>
-        <canvas id="analysesSparkline" height="80"></canvas>
-        <ul style="margin-top:8px;">
-          {% for a in analyses %}
-            <li>{{ a.date }} — id: {{ a.key }}</li>
-          {% endfor %}
-        </ul>
-      </section>
-
-      <section class="card">
-        <h2>Issues (primeros {{ issues|length }})</h2>
-        <div style="overflow:auto; max-height:500px;">
-          <table>
-            <thead><tr><th>Tipo</th><th>Severidad</th><th>Mensaje</th><th>Archivo</th><th>Línea</th></tr></thead>
-            <tbody>
-            {% for it in issues %}
-              <tr>
-                <td>{{ it.type }}</td>
-                <td class="sev-{{ it.severity }}">{{ it.severity }}</td>
-                <td>{{ it.message | e }}</td>
-                <td>{{ (it.component.split(':')[-1]) }}</td>
-                <td>{{ it.line or '' }}</td>
-              </tr>
-            {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </section>
+  <section>
+    <h2>Métricas principales</h2>
+    <div class="metrics">
+      {% for k, v in measures.items() %}
+        <div class="metric"><strong>{{ k }}</strong><div class="muted">{{ v }}</div></div>
+      {% endfor %}
     </div>
+  </section>
 
-    <aside class="right">
-      <div class="card">
-        <h3>Distribución de severidades</h3>
-        <canvas id="severityPie" width="300" height="220"></canvas>
-      </div>
+  <section>
+    <h2>Últimos análisis</h2>
+    <ul>
+      {% for a in analyses %}
+        <li>{{ a.date }} — id: {{ a.key }}</li>
+      {% endfor %}
+    </ul>
+  </section>
 
-      <div class="card">
-        <h3>Métricas (bar)</h3>
-        <canvas id="metricsBar" width="300" height="200"></canvas>
-      </div>
-
-      <div class="card small">
-        <div>Generado por Jenkins / SonarQube API</div>
-        <div style="margin-top:8px;color:#999;font-size:0.85rem;">Project key: {{ project_key }}</div>
-      </div>
-    </aside>
-  </div>
-
-  <!-- Hidden image holders (for PDF embedding if needed) -->
-  <div id="chartImages" style="display:none"></div>
+  <section>
+    <h2>Issues (primeros {{ issues|length }})</h2>
+    <table>
+      <thead><tr><th>Tipo</th><th>Severidad</th><th>Mensaje</th><th>Archivo</th><th>Línea</th></tr></thead>
+      <tbody>
+      {% for it in issues %}
+        <tr>
+          <td>{{ it.type }}</td>
+          <td class="sev-{{ it.severity }}">{{ it.severity }}</td>
+          <td>{{ it.message | e }}</td>
+          <td>{{ (it.component.split(':')[-1]) }}</td>
+          <td>{{ it.line or '' }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </section>
 
   <div class="footer">
-    Consejo: para convertir a PDF con los gráficos incluidos, usa Puppeteer y espera a que window.__chartsReady === true antes de imprimir.
+    Generado por Jenkins / SonarQube API
   </div>
-
-  <script>
-    // Embedeo de datos (Jinja -> JSON)
-    const measures = {{ measures | tojson | safe }};
-    const issues = {{ issues | tojson | safe }};
-    const analyses = {{ analyses | tojson | safe }};
-    const sonarUrl = "{{ sonar_url }}";
-    // --- utilidades ---
-    function countBySeverity(items){
-      const counts = {BLOCKER:0,CRITICAL:0,MAJOR:0,MINOR:0,INFO:0};
-      items.forEach(i=>{
-        const s = (i.severity||'').toUpperCase();
-        if(counts.hasOwnProperty(s)) counts[s]++;
-        else counts[s] = (counts[s]||0)+1;
-      });
-      return counts;
-    }
-    // --- severity pie ---
-    const sevCounts = countBySeverity(issues);
-    const sevLabels = Object.keys(sevCounts);
-    const sevData = sevLabels.map(l => sevCounts[l]);
-
-    const ctxPie = document.getElementById('severityPie').getContext('2d');
-    const severityPie = new Chart(ctxPie, {
-      type: 'pie',
-      data: {
-        labels: sevLabels,
-        datasets: [{
-          data: sevData,
-          backgroundColor: ['#7f0000','#8b0000','#d9534f','#f0ad4e','#5bc0de'],
-          borderColor: '#fff',
-          borderWidth: 1
-        }]
-      },
-      options: {
-        plugins:{legend:{position:'bottom',labels:{boxWidth:12}}},
-        maintainAspectRatio:false
-      }
-    });
-
-    // --- metrics bar (take numeric measures) ---
-    const metricKeys = [];
-    const metricVals = [];
-    for(const [k,v] of Object.entries(measures || {})){
-      // try to parse numeric value, skip non-numeric
-      const num = parseFloat((''+v).replace('%','').replace(',','.')) ;
-      if(!isNaN(num)){
-        metricKeys.push(k);
-        metricVals.push(num);
-      }
-    }
-    const ctxBar = document.getElementById('metricsBar').getContext('2d');
-    const metricsBar = new Chart(ctxBar, {
-      type: 'bar',
-      data: {
-        labels: metricKeys,
-        datasets: [{
-          label: 'Valor',
-          data: metricVals,
-          backgroundColor: '#2b5f8a'
-        }]
-      },
-      options: { indexAxis: 'y', maintainAspectRatio:false, plugins:{legend:{display:false}} }
-    });
-
-    // --- analyses sparkline (use number of issues per analysis if provided) ---
-    const sparkLabels = analyses.map(a => (new Date(a.date)).toLocaleDateString());
-    // If analyses have metrics e.g. issues count, create example values; fallback: use index
-    const sparkVals = analyses.map((a,i) => {
-      if(a.metrics && a.metrics.issues) return a.metrics.issues;
-      return i+1;
-    });
-    const ctxLine = document.getElementById('analysesSparkline').getContext('2d');
-    const analysesSpark = new Chart(ctxLine, {
-      type: 'line',
-      data: { labels: sparkLabels, datasets:[{ data: sparkVals, borderColor:'#2b5f8a', fill:true, backgroundColor:'rgba(43,95,138,0.08)' }] },
-      options: { plugins:{legend:{display:false}}, maintainAspectRatio:false, elements:{point:{radius:2}} }
-    });
-
-    // --- convert canvases to images for PDF / non-JS rendering ---
-    function embedCanvasAsImage(canvasId, targetDivId, imgId){
-      try {
-        const c = document.getElementById(canvasId);
-        if(!c) return;
-        const dataUrl = c.toDataURL('image/png');
-        const img = document.createElement('img');
-        img.src = dataUrl;
-        img.style.maxWidth = '100%';
-        img.id = imgId;
-        document.getElementById(targetDivId).appendChild(img);
-      } catch(e){ console.warn('no puedo convertir canvas a imagen', e); }
-    }
-
-    // wait a bit to ensure charts rendered
-    window.setTimeout(()=> {
-      embedCanvasAsImage('severityPie','chartImages','severityPieImg');
-      embedCanvasAsImage('metricsBar','chartImages','metricsBarImg');
-      embedCanvasAsImage('analysesSparkline','chartImages','sparklineImg');
-      // flag para herramientas (Puppeteer) que puede usar waitForFunction
-      window.__chartsReady = true;
-    }, 600);
-
-  </script>
 </body>
 </html>
