@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
 generate_report_html.py
-Genera reporte HTML desde SonarQube API.
+Genera reporte HTML desde SonarQube API y escribe report_summary.json con conteos por severidad.
+
 Uso:
   python3 generate_report_html.py --sonar-url http://192.168.100.236:9000 --project-key test_php --token <TOKEN> --output report.html --template report_template_v2.html
 """
@@ -10,6 +11,7 @@ import requests
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 import os
 import sys
+import json
 
 def get_measures(sonar_url, project_key, token):
     metric_keys = ",".join([
@@ -60,6 +62,60 @@ def render_html(context, template_file, output_file):
     with open(output_file, "w", encoding="utf-8") as f:
         f.write(html)
 
+# ----------------- summary writer -----------------
+def _normalize_severity(s):
+    if s is None:
+        return 'info'
+    s = str(s).strip().lower()
+    # Sonar severities: BLOCKER, CRITICAL, MAJOR, MINOR, INFO
+    if s in ('blocker', 'critical', 'crit'):
+        return 'critical'
+    if s in ('major', 'high'):
+        return 'major'
+    if s in ('minor', 'medium', 'med'):
+        return 'minor'
+    if s in ('info', 'informational', 'i'):
+        return 'info'
+    # fallback by substring
+    if 'block' in s or 'crit' in s:
+        return 'critical'
+    if 'high' in s:
+        return 'major'
+    if 'major' in s:
+        return 'major'
+    if 'low' in s or 'min' in s:
+        return 'minor'
+    return 'info'
+
+def write_summary_from_vulns(vulns, out_path='report_summary.json'):
+    """
+    vulns: lista de dicts; cada dict debe tener clave 'severity' o similar.
+    Escribe conteos por severidad (critical, major, minor, info).
+    """
+    counts = {}
+    for v in vulns or []:
+        sev = None
+        # Sonar issues include 'severity'
+        if isinstance(v, dict):
+            for k in ('severity', 'level', 'risk', 'severity_level'):
+                if k in v:
+                    sev = v[k]
+                    break
+        normalized = _normalize_severity(sev)
+        counts[normalized] = counts.get(normalized, 0) + 1
+
+    # Asegurar claves
+    for k in ('critical','major','minor','info'):
+        counts.setdefault(k, 0)
+
+    # escribir archivo atomically
+    tmp = out_path + '.tmp'
+    with open(tmp, 'w', encoding='utf-8') as fh:
+        json.dump(counts, fh, indent=2)
+    os.replace(tmp, out_path)
+    print(f"Wrote vulnerability summary to {out_path}: {counts}")
+
+# ----------------- main -----------------
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--sonar-url', required=True)
@@ -87,6 +143,21 @@ def main():
         }
         render_html(context, args.template, args.output)
         print(f"HTML generado: {args.output}")
+
+        # ----- write report_summary.json from Sonar issues -----
+        try:
+            # issues es la lista de hallazgos de Sonar; la usamos como "vulns"
+            print(f"Found {len(issues)} issues; writing report_summary.json ...")
+            write_summary_from_vulns(issues, 'report_summary.json')
+        except Exception as e:
+            print("Warning: fallo escribiendo report_summary.json:", e, file=sys.stderr)
+            # garantizar que no quede un archivo vacío: escribir ceros
+            try:
+                write_summary_from_vulns([], 'report_summary.json')
+            except Exception as ee:
+                print("ERROR al crear fallback report_summary.json:", ee, file=sys.stderr)
+                sys.exit(5)
+
     except requests.HTTPError as e:
         print("Error HTTP al consultar SonarQube:", e, file=sys.stderr)
         sys.exit(3)
@@ -94,67 +165,5 @@ def main():
         print("Error:", e, file=sys.stderr)
         sys.exit(4)
 
-# --- aquí está la parte que debes insertar o adaptar al final de tu generate_report_html.py existente ---
-# Añadimos código para escribir report_summary.json con conteos por severidad.
-# Debes adaptar la extracción de la lista de vulnerabilidades según la estructura real de tu script.
-import json
-
-def _normalize_severity(s):
-    if not s:
-        return 'info'
-    s = s.strip().lower()
-    if s in ('critical',):
-        return 'critical'
-    if s in ('major', 'high', 'severe'):
-        return 'major'   # mapear "high" a "major" si lo consideras así
-    if s in ('medium','minor'):
-        return 'minor'
-    if s in ('low',):
-        return 'minor'
-    return 'info'
-
-def write_summary_from_vulns(vulns, out_path='report_summary.json'):
-    """
-    vulns: lista de dicts; cada dict debe tener alguna clave con severidad:
-      'severity', 'level' o similar. Si tu estructura es distinta, adapta aquí.
-    """
-    counts = {}
-    for v in vulns:
-        # intenta encontrar el campo de severidad
-        sev = None
-        for k in ('severity','level','severity_level','risk'):
-            if isinstance(v, dict) and k in v:
-                sev = v[k]
-                break
-        normalized = _normalize_severity(sev)
-        counts[normalized] = counts.get(normalized, 0) + 1
-
-    # Escribe también claves vacías para seguridad
-    for k in ('critical','major','minor','info'):
-        counts.setdefault(k, 0)
-
-    with open(out_path, 'w') as fh:
-        json.dump(counts, fh, indent=2)
-    print(f"Wrote vulnerability summary to {out_path}: {counts}")
-
-# === USO:
-# Al final de tu generate_report_html.py (donde ya tengas la información de vulnerabilidades),
-# llama a write_summary_from_vulns(lista_de_vulns)
-#
-# Ejemplo si tu script ya crea una variable `vulnerabilities`:
-# try:
-#     write_summary_from_vulns(vulnerabilities, 'report_summary.json')
-# except NameError:
-#     # si no existe la variable, intenta buscar en otro sitio o produce summary vacío
-#     write_summary_from_vulns([], 'report_summary.json')
-#
-# -------------------------------------------------------------------------
-# Si tu generate_report_html.py produce un JSON con todos los hallazgos, preferible:
-# - extrae la lista de hallazgos y pásala a write_summary_from_vulns
-# - Jenkins leerá report_summary.json con check_vulnerabilities.py
-
-
 if __name__ == '__main__':
     main()
-
-
