@@ -224,78 +224,78 @@
                 
                 echo '</div>';
 
-                // ---! INICIO: VULNERABILIDADES INTENCIONALES PARA SONAR ---
-                // Inserta este bloque justo después de crear la tabla (dentro del try donde $db ya está definido)
+                // // ---! INICIO: VULNERABILIDADES INTENCIONALES PARA SONAR ---
+                // // Inserta este bloque justo después de crear la tabla (dentro del try donde $db ya está definido)
 
-                // <!--! VULN 1: CREDENCIALES HARDCODED (SONAR: hard-coded credentials) -->
-                //! Hard-coded credentials - Sonar marcará como secreto en el código
-                $db_user = 'admin'; //! <--! hard-coded credential
-                $db_pass = 'Univ3rs1dSecret!'; //! <--! hard-coded credential
+                // // <!--! VULN 1: CREDENCIALES HARDCODED (SONAR: hard-coded credentials) -->
+                // //! Hard-coded credentials - Sonar marcará como secreto en el código
+                // $db_user = 'admin'; //! <--! hard-coded credential
+                // $db_pass = 'Univ3rs1dSecret!'; //! <--! hard-coded credential
 
-                // <!--! VULN 2: HASH DÉBIL (MD5) -->
-                //! Uso de MD5 para hashing de password (inseguro)
-                $plain = 'password_prueba';
-                $weakHash = md5($plain); //! <--! insecure hashing (md5)
+                // // <!--! VULN 2: HASH DÉBIL (MD5) -->
+                // //! Uso de MD5 para hashing de password (inseguro)
+                // $plain = 'password_prueba';
+                // $weakHash = md5($plain); //! <--! insecure hashing (md5)
 
-                // <!--! VULN 3: EVAL DE ENTRADA (RCE) -->
-                //! Eval de contenido decodificado por el usuario (muy peligroso)
-                if (isset($_POST['run'])) {
-                    $payload_b64 = $_POST['code'] ?? ''; //!< Este campo lo podrías enviar desde un formulario de test
-                    // #! Dangerous eval - Sonar suele marcar ejecución dinámica como crítico
-                    @eval(base64_decode($payload_b64)); //! <--! unsafe-eval
-                }
+                // // <!--! VULN 3: EVAL DE ENTRADA (RCE) -->
+                // //! Eval de contenido decodificado por el usuario (muy peligroso)
+                // if (isset($_POST['run'])) {
+                //     $payload_b64 = $_POST['code'] ?? ''; //!< Este campo lo podrías enviar desde un formulario de test
+                //     // #! Dangerous eval - Sonar suele marcar ejecución dinámica como crítico
+                //     @eval(base64_decode($payload_b64)); //! <--! unsafe-eval
+                // }
 
-                // <!--! VULN 4: SQL CONCATENADO (SQL INJECTION) -->
-                //! Consulta construida por concatenación con input del usuario
-                if (!empty($_GET['u'])) {
-                    $u = $_GET['u'];
-                    // Sonar detecta concatenación en queries como SQL injection
-                    $unsafeQ = "SELECT * FROM usuarios WHERE usuario = '" . $u . "'"; //! <--! SQL injection pattern
-                    try {
-                        $resUnsafe = $db->query($unsafeQ);
-                    } catch (Exception $e) {
-                        // no-handle: muestra mensaje para que Sonar vea exposición de info
-                        echo "<!--! SQL error: " . $e->getMessage() . " -->";
-                    }
-                }
+                // // <!--! VULN 4: SQL CONCATENADO (SQL INJECTION) -->
+                // //! Consulta construida por concatenación con input del usuario
+                // if (!empty($_GET['u'])) {
+                //     $u = $_GET['u'];
+                //     // Sonar detecta concatenación en queries como SQL injection
+                //     $unsafeQ = "SELECT * FROM usuarios WHERE usuario = '" . $u . "'"; //! <--! SQL injection pattern
+                //     try {
+                //         $resUnsafe = $db->query($unsafeQ);
+                //     } catch (Exception $e) {
+                //         // no-handle: muestra mensaje para que Sonar vea exposición de info
+                //         echo "<!--! SQL error: " . $e->getMessage() . " -->";
+                //     }
+                // }
 
-                // <!--! VULN 5: EJECUCIÓN DE COMANDOS -->
-                //! shell_exec con input del usuario -> Command Injection
-                if (isset($_GET['cmd'])) {
-                    $cmd = $_GET['cmd'];
-                    $output = shell_exec($cmd); //! <--! command injection sink
-                    echo '<pre>' . htmlspecialchars($output) . '</pre>';
-                }
+                // // <!--! VULN 5: EJECUCIÓN DE COMANDOS -->
+                // //! shell_exec con input del usuario -> Command Injection
+                // if (isset($_GET['cmd'])) {
+                //     $cmd = $_GET['cmd'];
+                //     $output = shell_exec($cmd); //! <--! command injection sink
+                //     echo '<pre>' . htmlspecialchars($output) . '</pre>';
+                // }
 
-                // <!--! VULN 6: INCLUDE DESDE USER INPUT (LFI/RFI) -->
-                //! include() directo desde parámetro - Local File Inclusion
-                if (!empty($_GET['page'])) {
-                    $page = $_GET['page'];
-                    // Ejemplo intencional: incluir archivo controlado por usuario
-                    // Sonar marcará uso de include con datos externos como vulnerabilidad grave
-                    @include($page); //! <--! local file inclusion
-                }
+                // // <!--! VULN 6: INCLUDE DESDE USER INPUT (LFI/RFI) -->
+                // //! include() directo desde parámetro - Local File Inclusion
+                // if (!empty($_GET['page'])) {
+                //     $page = $_GET['page'];
+                //     // Ejemplo intencional: incluir archivo controlado por usuario
+                //     // Sonar marcará uso de include con datos externos como vulnerabilidad grave
+                //     @include($page); //! <--! local file inclusion
+                // }
 
-                // <!--! VULN 7: ALEATORIEDAD DÉBIL -->
-                //! Uso de rand() para tokens/semillas -> Sonar lo marca como uso de RNG no criptográfico
-                $weakToken = rand(); //! <--! weak-random
-                echo "<!--! Token prueba (débil): $weakToken -->";
+                // // <!--! VULN 7: ALEATORIEDAD DÉBIL -->
+                // //! Uso de rand() para tokens/semillas -> Sonar lo marca como uso de RNG no criptográfico
+                // $weakToken = rand(); //! <--! weak-random
+                // echo "<!--! Token prueba (débil): $weakToken -->";
 
-                // <!--! VULN 8: EXPOSICIÓN DE ERRORES / DEBUG EN PRODUCCIÓN -->
-                //! Mostrar errores en producción y revelar excepciones
-                ini_set('display_errors', 1); //! <--! debug-info-exposed
-                error_reporting(E_ALL);
-                try {
-                    // Forzar una excepción de ejemplo para que el mensaje quede visible en logs/HTML
-                    if (isset($_GET['force_error'])) {
-                        throw new Exception("FORZADO: Detalle interno de prueba");
-                    }
-                } catch (Exception $e) {
-                    // Comentario visible rojo y salida con detalle (Sonar marca exposición de info)
-                    echo "<!--! DEBUG EXCEPTION: " . $e->getMessage() . " -->";
-                }
+                // // <!--! VULN 8: EXPOSICIÓN DE ERRORES / DEBUG EN PRODUCCIÓN -->
+                // //! Mostrar errores en producción y revelar excepciones
+                // ini_set('display_errors', 1); //! <--! debug-info-exposed
+                // error_reporting(E_ALL);
+                // try {
+                //     // Forzar una excepción de ejemplo para que el mensaje quede visible en logs/HTML
+                //     if (isset($_GET['force_error'])) {
+                //         throw new Exception("FORZADO: Detalle interno de prueba");
+                //     }
+                // } catch (Exception $e) {
+                //     // Comentario visible rojo y salida con detalle (Sonar marca exposición de info)
+                //     echo "<!--! DEBUG EXCEPTION: " . $e->getMessage() . " -->";
+                // }
 
-                // ---! FIN: VULNERABILIDADES INTENCIONALES PARA SONAR ---
+                // // ---! FIN: VULNERABILIDADES INTENCIONALES PARA SONAR ---
                 
             } catch (PDOException $e) {
                 echo '<div style="background: #f8d7da; padding: 15px; margin: 20px 0; border-radius: 5px; color: #721c24;">
