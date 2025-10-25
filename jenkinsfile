@@ -76,32 +76,16 @@ node {
     echo '✅ Reportes PDF generados exitosamente'
   }
 
-  // stage('7. Enviar Reporte por Email') {
-  //   echo 'Enviando reporte por correo electrónico...'
-  //   emailext(
-  //     subject: "✅ SonarQube Report: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-  //     body: """
-  //       <h2>Informe de Análisis SonarQube</h2>
-  //       <p><strong>Proyecto:</strong> ${projectKey}</p>
-  //       <p><strong>Build:</strong> #${env.BUILD_NUMBER}</p>
-  //       <p><strong>SonarQube URL:</strong> <a href="${sonarUrl}">${sonarUrl}</a></p>
-  //       <p><strong>IP del Host:</strong> ${hostIP}</p>
-  //       <hr>
-  //       <p>Adjunto encontrarás los informes PDF generados con diferentes herramientas.</p>
-  //     """,
-  //     to: reportRecipients,
-  //     mimeType: 'text/html',
-  //     attachmentsPattern: """reporte_${projectKey}_${env.BUILD_NUMBER}.pdf"""
-  //   )
-  //   echo '✅ Email enviado exitosamente'
-  // }
-
   stage('7. Comprobar vulnerabilidades (umbral de despliegue)') {
     script {
-      // Ejecuta el script y captura su salida
-      def out = sh(script: "python3 check_vulnerabilities.py report_summary.json", returnStdout: true).trim()
-      // out tiene la salida multi-line; la primera línea es true/false
-      def firstLine = out.tokenize('\n')[0].trim().toLowerCase()
+      // Ejecuta el script y captura su salida (multi-line)
+        def out = sh(script: "python3 check_vulnerabilities.py report_summary.json", returnStdout: true).trim()
+        // separar líneas de la salida
+        def lines = out ? out.split("\\r?\\n") : []
+        def firstLine = (lines.length > 0) ? lines[0].trim().toLowerCase() : ''
+        // detalles sin la primera línea (para el email y logs), evita mostrar "true"/"false"
+        def details = (lines.length > 1) ? (lines as List)[1..-1].join('\n') : ''
+
       echo "check_vulnerabilities output (raw):\n${out}"
       if (firstLine == 'true') {
         deploy_ok = true
@@ -109,7 +93,7 @@ node {
         echo "➡️ Deploy OK según summary: deploy_ok=true"
       } else if (firstLine == 'false') {
         deploy_ok = false
-        despliegue_msg = "<h3 style='color:red'>Despliegue abortado</h3><p>Se detectaron vulnerabilidades peligrosas. No se ejecutará el despliegue automático.</p><pre>${out}</pre>"
+        despliegue_msg = "<h3 style='color:red'>Despliegue abortado</h3><p>Se detectaron vulnerabilidades peligrosas, no se ejecutará el despliegue automático.</p><pre>${out}</pre>"
         echo "➡️ Deploy NOT OK según summary: deploy_ok=false"
       } else {
         // salida inesperada: tratar como error de verificación

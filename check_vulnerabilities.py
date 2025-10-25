@@ -45,7 +45,7 @@ def main():
         # false -> no desplegar
         print("false")
         print("Detalles:", ", ".join(details))
-        print(f"Total bloqueantes: {total_blocking}")
+        print(f"Peligros totales: {total_blocking}")
         return 0
     else:
         # true -> ok desplegar
