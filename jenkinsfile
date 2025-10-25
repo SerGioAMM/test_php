@@ -99,7 +99,7 @@ node {
   stage('8. Limpieza') {
     echo '🧹 Limpiando archivos temporales...'
     sh '''
-      # Opcional: limpiar archivos temporales si es necesario
+      # Limpiar archivos temporales de Python
       # rm -rf .venv
     '''
     echo '✅ Archivos temporales eliminados'

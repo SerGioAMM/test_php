@@ -122,7 +122,7 @@
             ⚠️ SOLO PARA LABORATORIO - CONTIENE VULNERABILIDADES INTENCIONALES
         </div>
         <?pp
-        <div class="content" error 1>
+        <div class="content" error 2>
             <div class="vuln-info">
                 <h3>🐛 Vulnerabilidades Implementadas:</h3>
                 <ul>
