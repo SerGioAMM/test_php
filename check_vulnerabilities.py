@@ -44,14 +44,12 @@ def main():
     if total_blocking > 0:
         # false -> no desplegar
         print("false")
-        print("Despliegue abortado: se detectaron vulnerabilidades bloqueantes.")
         print("Detalles:", ", ".join(details))
         print(f"Total bloqueantes: {total_blocking}")
         return 0
     else:
         # true -> ok desplegar
         print("true")
-        print("Despliegue autorizado: no se detectaron vulnerabilidades bloqueantes.")
         print("Detalles:", ", ".join(details))
         return 0
 
