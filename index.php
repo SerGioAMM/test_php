@@ -305,7 +305,10 @@
 
             <style>
                 .container {
-                    background-color:white !important;
+                    background-color:black !important;
+                }
+                .content{
+                    
                 }
             </style>
 

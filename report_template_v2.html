@@ -264,7 +264,6 @@
             <article class="issue-card" data-title="{{ it.message | e }}" data-file="{{ (it.component.split(':')[-1]) }}" data-severity="{{ it.severity }}">
               <div class="issue-left">
                 <div class="issue-checkbox" role="checkbox" aria-checked="false" tabindex="0"></div>
-                <div style="font-size:0.78rem; color:var(--muted);">{{ it.line or '' }}</div>
               </div>
 
               <div class="issue-body">
@@ -278,7 +277,7 @@
                 </div>
 
                 <div class="issue-desc">
-                  Archivo: <strong>{{ (it.component.split(':')[-1]) }}</strong> — Tipo: <em>{{ it.type }}</em>
+                  Archivo: <strong>{{ (it.component.split(':')[-1]) }}</strong> — Tipo: <em>{{ it.type }}</em> Linea: <strong>{{ it.line or 'N/A' }}</strong>
                   <div class="issue-tags">
                     {% for t in (it.tags or []) %}
                       <span class="tag">{{ t }}</span>
