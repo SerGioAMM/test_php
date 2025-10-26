@@ -277,7 +277,7 @@
                 </div>
 
                 <div class="issue-desc">
-                  Archivo: <strong>{{ (it.component.split(':')[-1]) }}</strong> — Tipo: <em>{{ it.type }}</em> Linea: <strong>{{ it.line or 'N/A' }}</strong>
+                  Archivo: <strong>{{ (it.component.split(':')[-1]) }}</strong> — Tipo: <em>{{ it.type }}</em> en <strong> línea:{{ it.line or 'N/A' }}</strong>
                   <div class="issue-tags">
                     {% for t in (it.tags or []) %}
                       <span class="tag">{{ t }}</span>
