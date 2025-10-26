@@ -293,6 +293,30 @@
                 //     // Comentario visible rojo y salida con detalle (Sonar marca exposición de info)
                 //     echo "<!--! DEBUG EXCEPTION: " . $e->getMessage() . " -->";
                 // }
+                
+                // ini_set('display_errors', 1); //! <--! debug-info-exposed
+                // error_reporting(E_ALL);
+                // try {
+                //     // Forzar una excepción de ejemplo para que el mensaje quede visible en logs/HTML
+                //     if (isset($_GET['force_error'])) {
+                //         throw new Exception("FORZADO: Detalle interno de prueba");
+                //     }
+                // } catch (Exception $e) {
+                //     // Comentario visible rojo y salida con detalle (Sonar marca exposición de info)
+                //     echo "<!--! DEBUG EXCEPTION: " . $e->getMessage() . " -->";
+                // }
+                
+                // ini_set('display_errors', 1); //! <--! debug-info-exposed
+                // error_reporting(E_ALL);
+                // try {
+                //     // Forzar una excepción de ejemplo para que el mensaje quede visible en logs/HTML
+                //     if (isset($_GET['force_error'])) {
+                //         throw new Exception("FORZADO: Detalle interno de prueba");
+                //     }
+                // } catch (Exception $e) {
+                //     // Comentario visible rojo y salida con detalle (Sonar marca exposición de info)
+                //     echo "<!--! DEBUG EXCEPTION: " . $e->getMessage() . " -->";
+                // }
 
                 // //? ---! FIN: VULNERABILIDADES INTENCIONALES PARA SONAR ---
                 
@@ -308,7 +332,7 @@
                     background-color:black !important;
                 }
                 .content{
-                    
+
                 }
             </style>
 
