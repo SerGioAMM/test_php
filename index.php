@@ -275,7 +275,7 @@
                     @include($page); //! <--! local file inclusion
                 }
 
-                // <!--! VULN 7: ALEATORIEDAD DÉBIL -->
+                // <!--! VULN 7: ALEATORIEDAD DÉBIL  -->
                 //! Uso de rand() para tokens/semillas -> Sonar lo marca como uso de RNG no criptográfico
                 $weakToken = rand(); //! <--! weak-random
                 echo "<!--! Token prueba (débil): $weakToken -->";
